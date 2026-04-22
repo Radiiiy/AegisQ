@@ -1,0 +1,20 @@
+# Large model files
+aegis_cv_model.h5
+aegis_url_model_v2.pkl
+aegis_url_model.pkl
+
+# Dataset images
+dataset/
+
+# CSV data files
+*.csv
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Screenshots
+Screenshots/
+
+# Environment files
+.env
