@@ -1,0 +1,19 @@
+# Official Sri Lankan Payment & Government Domains
+cbsl.gov.lk
+lankapay.net
+lankaqr.lk
+icta.lk
+govpay.lk
+lankasign.lk
+
+# Major Sri Lankan Banking Domains
+boc.lk
+sampath.lk
+combank.lk
+ndbbank.com
+hnb.net
+peoplesbank.lk
+seylan.lk
+dfcc.lk
+nationstrust.com
+pabcbank.com
