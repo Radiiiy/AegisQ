@@ -10,9 +10,23 @@ from scipy.stats import entropy as scipy_entropy
 import xgboost as xgb
 import shap
 from database import init_db, save_scan, get_history, get_stats
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 app = FastAPI()
 init_db()
+app.mount("/static", StaticFiles(directory="."), name="static")
+
+@app.get("/app")
+def serve_frontend():
+    return FileResponse("index2.html")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # --- 1. LOAD THE BRAINS ---
 print("AegisQ: Loading Dual-Layer AI Models...")
@@ -39,31 +53,27 @@ def _calculate_entropy(url):
     return scipy_entropy(prob, base=2)
 
 def extract_url_features(url):
-    """Translates a URL string into the exact 9 numbers the XGBoost brain expects."""
+    """Translates a URL string into 13 features the XGBoost model expects."""
     url = str(url)
-    features = {}
-
-    features['url_length'] = len(url)
-    features['digit_ratio'] = sum(c.isdigit() for c in url) / len(url)
-    features['entropy'] = _calculate_entropy(url)
-    features['count_dots'] = url.count('.')
-    features['count_hyphens'] = url.count('-')
-    features['count_at'] = url.count('@')
-    features['is_https'] = 1 if url.startswith('https') else 0
-
     ext = tldextract.extract(url)
+    domain_name = ext.domain.lower()
+    raw_entropy = _calculate_entropy(url)
+
     suspicious_tlds = ['zip', 'top', 'xyz', 'work', 'bid', 'click']
-    features['suspicious_tld'] = 1 if ext.suffix in suspicious_tlds else 0
+    safe_tlds = ['com', 'org', 'net', 'edu', 'gov', 'ac', 'lk',
+                 'uk', 'au', 'io', 'google', 'youtube', 'microsoft']
+    trusted_domains_list = [
+        'google', 'youtube', 'facebook', 'instagram', 'twitter',
+        'microsoft', 'apple', 'amazon', 'netflix', 'spotify',
+        'github', 'stackoverflow', 'wikipedia', 'reddit', 'linkedin',
+        'whatsapp', 'telegram', 'tiktok', 'snapchat', 'pinterest',
+        'boc', 'sampath', 'combank', 'hnb', 'nsbm', 'cmb', 'seylan',
+        'dfcc', 'nations', 'peoples', 'lankapay', 'lankaqr', 'cbsl',
+        'gov', 'edu', 'ac', 'university', 'bank'
+    ]
 
-    keywords = ['login', 'verify', 'secure', 'update', 'banking', 'lanka', 'gift', 'reward']
-    features['keyword_count'] = sum(1 for word in keywords if word in url.lower())
-
-    # Sinhala/Tamil Localization Detection
-    sinhala_tamil_unicode = any(
-        '\u0D80' <= char <= '\u0DFF' or '\u0B80' <= char <= '\u0BFF'
-        for char in url
-    )
-
+    keywords = ['login', 'verify', 'secure', 'update', 'banking',
+                'lanka', 'gift', 'reward']
     transliterated_keywords = [
         'ginuma', 'tahauru', 'bank seva', 'ganum', 'within',
         'ithiripas', 'palamu', 'anuthura', 'sampurna',
@@ -73,9 +83,39 @@ def extract_url_features(url):
         'account suspended', 'urgent action', 'immediate verify'
     ]
 
-    features['sinhala_tamil_keywords'] = (
-        1 if sinhala_tamil_unicode else 0
-    ) + sum(1 for word in transliterated_keywords if word in url.lower())
+    is_https = 1 if url.startswith('https') else 0
+    suspicious_tld = 1 if ext.suffix in suspicious_tlds else 0
+    safe_tld = 1 if ext.suffix in safe_tlds else 0
+    is_trusted_domain = 1 if (
+        any(td in domain_name for td in trusted_domains_list) or
+        any(td in ext.suffix for td in trusted_domains_list)
+    ) else 0
+    sinhala_tamil_unicode = any(
+        '\u0D80' <= char <= '\u0DFF' or '\u0B80' <= char <= '\u0BFF'
+        for char in url
+    )
+
+    features = {
+        'url_length':             len(url),
+        'digit_ratio':            sum(c.isdigit() for c in url) / len(url),
+        'entropy':                raw_entropy,
+        'count_dots':             url.count('.'),
+        'count_hyphens':          url.count('-'),
+        'count_at':               url.count('@'),
+        'is_https':               is_https,
+        'suspicious_tld':         suspicious_tld,
+        'safe_tld':               safe_tld,
+        'is_trusted_domain':      is_trusted_domain,
+        'keyword_count':          sum(1 for word in keywords if word in url.lower()),
+        'sinhala_tamil_keywords': (1 if sinhala_tamil_unicode else 0)
+                                  + sum(1 for word in transliterated_keywords if word in url.lower()),
+        'entropy_risk':           1 if (
+                                      raw_entropy > 4.5
+                                      and suspicious_tld == 1
+                                      and is_https == 0
+                                      and is_trusted_domain == 0
+                                  ) else 0,
+    }
 
     return pd.DataFrame([features])
 
@@ -96,6 +136,9 @@ _FEATURE_REASONS = {
     'suspicious_tld':"The URL uses a suspicious top-level domain commonly associated with phishing sites.",
     'keyword_count': "The URL contains phishing keywords such as 'login', 'verify', or 'secure'.",
     'sinhala_tamil_keywords': "The URL contains Sinhala or Tamil language patterns commonly used in Sri Lankan phishing scams.",
+    'safe_tld': "The URL does not use a trusted domain extension, increasing suspicion.",
+    'is_trusted_domain': "The URL does not belong to any recognised trusted domain, increasing suspicion.",
+    'entropy_risk': "The URL has high randomness combined with multiple other suspicious signals.",
 }
 
 def get_shap_explanation(url_features_df):

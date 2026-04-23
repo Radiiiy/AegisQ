@@ -17,3 +17,17 @@ seylan.lk
 dfcc.lk
 nationstrust.com
 pabcbank.com
+
+# Sri Lankan Universities
+nsbm.ac.lk
+students.nsbm.ac.lk
+
+# Google Services
+share.google
+goo.gl
+google.com
+googleapis.com
+
+# Google/YouTube Services
+youtube.com
+youtu.be

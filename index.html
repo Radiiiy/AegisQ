@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AegisQ — QR Threat Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700;900&family=Barlow+Condensed:wght@700;900&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:        #080c10;
+    --bg2:       #0d1117;
+    --bg3:       #111820;
+    --border:    #1e2d3d;
+    --border2:   #243447;
+    --accent:    #00e5ff;
+    --accent2:   #0097a7;
+    --green:     #00ff88;
+    --green2:    #00c96a;
+    --red:       #ff3355;
+    --red2:      #cc1133;
+    --yellow:    #ffcc00;
+    --text:      #c9d8e8;
+    --text2:     #6b8099;
+    --text3:     #3d5468;
+    --mono:      'Share Tech Mono', monospace;
+    --sans:      'Barlow', sans-serif;
+    --cond:      'Barlow Condensed', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── BACKGROUND GRID ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── SCANLINE OVERLAY ── */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,.08) 2px,
+      rgba(0,0,0,.08) 4px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+  /* ── HEADER ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 0;
+    position: sticky;
+    top: 0;
+    background: rgba(8,12,16,.92);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .logo-icon::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0,229,255,.15), transparent);
+  }
+
+  .logo-icon svg { width: 20px; height: 20px; }
+
+  .logo-text {
+    font-family: var(--cond);
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: #fff;
+  }
+
+  .logo-text span { color: var(--accent); }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--green);
+    background: rgba(0,255,136,.06);
+    border: 1px solid rgba(0,255,136,.2);
+    border-radius: 20px;
+    padding: 6px 14px;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,255,136,.4); }
+    50% { opacity: .7; box-shadow: 0 0 0 6px rgba(0,255,136,0); }
+  }
+
+  /* ── HERO ── */
+  .hero {
+    padding: 60px 0 40px;
+    text-align: center;
+  }
+
+  .hero-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .hero h1 {
+    font-family: var(--cond);
+    font-size: clamp(36px, 5vw, 64px);
+    font-weight: 900;
+    letter-spacing: 1px;
+    line-height: 1.05;
+    color: #fff;
+    margin-bottom: 16px;
+  }
+
+  .hero h1 em {
+    font-style: normal;
+    color: var(--accent);
+  }
+
+  .hero p {
+    font-size: 15px;
+    color: var(--text2);
+    max-width: 520px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 40px;
+  }
+
+  .stat-cell {
+    background: var(--bg2);
+    padding: 20px 24px;
+    text-align: center;
+    transition: background .2s;
+  }
+
+  .stat-cell:hover { background: var(--bg3); }
+
+  .stat-num {
+    font-family: var(--cond);
+    font-size: 32px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-num.danger { color: var(--red); }
+  .stat-num.safe { color: var(--green); }
+  .stat-num.accent { color: var(--accent); }
+
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--text3);
+    text-transform: uppercase;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 32px;
+    width: fit-content;
+  }
+
+  .tab-btn {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 1px;
+    padding: 10px 24px;
+    border: none;
+    background: transparent;
+    color: var(--text2);
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all .2s;
+    text-transform: uppercase;
+  }
+
+  .tab-btn.active {
+    background: var(--accent);
+    color: #000;
+    font-weight: 700;
+  }
+
+  .tab-btn:hover:not(.active) {
+    color: var(--text);
+    background: var(--bg3);
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── SCANNER GRID ── */
+  .scanner-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
+  @media (max-width: 768px) {
+    .scanner-grid { grid-template-columns: 1fr; }
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color .2s;
+  }
+
+  .card:hover { border-color: var(--border2); }
+
+  .card-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(0,229,255,.1);
+    border: 1px solid rgba(0,229,255,.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .card-title {
+    font-family: var(--cond);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #fff;
+  }
+
+  .card-sub {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+
+  .card-body { padding: 24px; }
+
+  /* ── QR UPLOAD ZONE ── */
+  .upload-zone {
+    border: 2px dashed var(--border2);
+    border-radius: 10px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(0,229,255,.04);
+  }
+
+  .upload-zone input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 12px;
+    opacity: .4;
+  }
+
+  .upload-text {
+    font-size: 14px;
+    color: var(--text2);
+    margin-bottom: 4px;
+  }
+
+  .upload-hint {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  .preview-img {
+    max-width: 100%;
+    max-height: 160px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    display: none;
+  }
+
+  /* ── URL INPUT ── */
+  .url-input-wrap {
+    position: relative;
+    margin-bottom: 16px;
+  }
+
+  .url-input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    transition: border-color .2s;
+    resize: none;
+    min-height: 80px;
+  }
+
+  .url-input:focus { border-color: var(--accent); }
+  .url-input::placeholder { color: var(--text3); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: none;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all .2s;
+    width: 100%;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    font-weight: 700;
+  }
+
+  .btn-primary:hover {
+    background: #fff;
+    box-shadow: 0 0 20px rgba(0,229,255,.3);
+  }
+
+  .btn-primary:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* ── SCANNING ANIMATION ── */
+  .scanning-wrap {
+    display: none;
+    text-align: center;
+    padding: 24px 0;
+  }
+
+  .scan-ring {
+    width: 60px;
+    height: 60px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 12px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .scan-text {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    animation: blink 1.2s infinite;
+  }
+
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+
+  /* ── RESULT CARD ── */
+  .result-wrap { display: none; margin-top: 20px; }
+
+  .result-banner {
+    border-radius: 10px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .result-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: .06;
+  }
+
+  .result-banner.secure {
+    background: rgba(0,255,136,.08);
+    border: 1px solid rgba(0,255,136,.25);
+  }
+
+  .result-banner.secure::before { background: var(--green); }
+
+  .result-banner.threat {
+    background: rgba(255,51,85,.08);
+    border: 1px solid rgba(255,51,85,.25);
+  }
+
+  .result-banner.threat::before { background: var(--red); }
+
+  .result-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 18px;
+  }
+
+  .result-banner.secure .result-icon { background: rgba(0,255,136,.15); }
+  .result-banner.threat .result-icon { background: rgba(255,51,85,.15); }
+
+  .result-status {
+    font-family: var(--cond);
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: 1px;
+  }
+
+  .result-banner.secure .result-status { color: var(--green); }
+  .result-banner.threat .result-status { color: var(--red); }
+
+  .result-msg {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+
+  /* ── LAYERS ── */
+  .layers-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .layer-cell {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+
+  .layer-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .layer-verdict {
+    font-family: var(--cond);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: .5px;
+  }
+
+  .layer-verdict.safe { color: var(--green); }
+  .layer-verdict.dangerous { color: var(--red); }
+  .layer-verdict.malicious { color: var(--red); }
+  .layer-verdict.unknown { color: var(--yellow); }
+
+  .layer-conf {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+
+  /* ── URL DISPLAY ── */
+  .url-display {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+    word-break: break-all;
+    margin-bottom: 14px;
+  }
+
+  .url-display-label {
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  /* ── SHAP EXPLANATION ── */
+  .shap-wrap {
+    background: var(--bg3);
+    border: 1px solid rgba(255,51,85,.2);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .shap-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255,51,85,.15);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,51,85,.04);
+  }
+
+  .shap-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--red);
+    text-transform: uppercase;
+  }
+
+  .shap-body { padding: 14px; }
+
+  .shap-summary {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.6;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .risk-factor {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .risk-factor:last-child { border-bottom: none; padding-bottom: 0; }
+
+  .risk-badge {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .5px;
+    padding: 3px 7px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .risk-badge.HIGH { background: rgba(255,51,85,.15); color: var(--red); border: 1px solid rgba(255,51,85,.3); }
+  .risk-badge.MEDIUM { background: rgba(255,204,0,.1); color: var(--yellow); border: 1px solid rgba(255,204,0,.3); }
+  .risk-badge.LOW { background: rgba(0,229,255,.08); color: var(--accent); border: 1px solid rgba(0,229,255,.2); }
+
+  .risk-reason {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+
+  /* ── HISTORY TABLE ── */
+  .history-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .history-title {
+    font-family: var(--cond);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #fff;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg2);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead { background: var(--bg3); }
+
+  th {
+    padding: 12px 16px;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--text3);
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+
+  .td-url {
+    font-family: var(--mono);
+    font-size: 12px;
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text2);
+  }
+
+  .td-time {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    white-space: nowrap;
+  }
+
+  .td-type {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(0,229,255,.08);
+    border: 1px solid rgba(0,229,255,.15);
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  .verdict-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+
+  .verdict-badge.threat {
+    background: rgba(255,51,85,.12);
+    border: 1px solid rgba(255,51,85,.3);
+    color: var(--red);
+  }
+
+  .verdict-badge.secure {
+    background: rgba(0,255,136,.08);
+    border: 1px solid rgba(0,255,136,.25);
+    color: var(--green);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text3);
+  }
+
+  .empty-state-icon { font-size: 40px; margin-bottom: 12px; opacity: .4; }
+  .empty-state p { font-size: 14px; }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 24px 0;
+    margin-top: 60px;
+    text-align: center;
+  }
+
+  .footer-text {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 1px;
+  }
+
+  .footer-text span { color: var(--accent); }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 14px 20px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all .3s;
+    z-index: 200;
+    max-width: 320px;
+  }
+
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.error { border-color: rgba(255,51,85,.4); color: var(--red); }
+  .toast.success { border-color: rgba(0,255,136,.3); color: var(--green); }
+
+  /* ── ANIMATIONS ── */
+  .fade-in {
+    animation: fadeIn .4s ease forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .glow-accent { text-shadow: 0 0 20px rgba(0,229,255,.5); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="wrap header-inner">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">AEGIS<span>Q</span></div>
+      </div>
+    </div>
+    <div class="status-pill">
+      <div class="status-dot"></div>
+      <span id="serverStatus">CONNECTING...</span>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main>
+  <div class="wrap">
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-tag">// AI-Driven QR Threat Intelligence</div>
+      <h1>Scan Before You <em>Trust</em></h1>
+      <p>Dual-layer AI protection against QR phishing attacks. Physical tampering detection + URL analysis with explainable threat intelligence.</p>
+    </section>
+
+    <!-- STATS BAR -->
+    <div class="stats-bar" id="statsBar">
+      <div class="stat-cell">
+        <div class="stat-num accent" id="statTotal">—</div>
+        <div class="stat-label">Total Scans</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num danger" id="statThreats">—</div>
+        <div class="stat-label">Threats Detected</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num safe" id="statSecure">—</div>
+        <div class="stat-label">Secure Scans</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num" id="statPct" style="color:var(--yellow)">—</div>
+        <div class="stat-label">Threat Rate</div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('scan')">⬡ Scan</button>
+      <button class="tab-btn" onclick="switchTab('history')">◈ History</button>
+    </div>
+
+    <!-- SCAN TAB -->
+    <div class="tab-panel active" id="tab-scan">
+      <div class="scanner-grid">
+
+        <!-- QR SCANNER CARD -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3M17 20h3M20 17v3"/>
+              </svg>
+            </div>
+            <div>
+              <div class="card-title">QR Scanner</div>
+              <div class="card-sub">Upload a QR code image to analyze</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="upload-zone" id="uploadZone">
+              <input type="file" id="qrFileInput" accept="image/*" onchange="handleQRUpload(event)"/>
+              <img class="preview-img" id="previewImg" alt="preview"/>
+              <div class="upload-icon" id="uploadIcon">
+                <svg viewBox="0 0 48 48" fill="none" stroke="#6b8099" stroke-width="2">
+                  <rect x="8" y="8" width="13" height="13" rx="2"/><rect x="27" y="8" width="13" height="13" rx="2"/>
+                  <rect x="8" y="27" width="13" height="13" rx="2"/>
+                  <path d="M27 27h5v5M35 27v5h-5M27 40h8M35 35v5"/>
+                </svg>
+              </div>
+              <div class="upload-text" id="uploadText">Drop QR image here or click to browse</div>
+              <div class="upload-hint">PNG, JPG supported</div>
+            </div>
+
+            <div class="scanning-wrap" id="qrScanning">
+              <div class="scan-ring"></div>
+              <div class="scan-text">ANALYZING QR CODE...</div>
+            </div>
+
+            <div class="result-wrap" id="qrResult"></div>
+
+            <button class="btn btn-primary" style="margin-top:16px" id="qrScanBtn" onclick="submitQRScan()" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M1 1h6v6H1zM17 1h6v6h-6zM1 17h6v6H1zM11 1v4M11 11h4M15 11v4M11 15h4M21 11v10M11 21h4"/>
+              </svg>
+              Scan QR Code
+            </button>
+          </div>
+        </div>
+
+        <!-- URL CHECKER CARD -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2">
+                <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+              </svg>
+            </div>
+            <div>
+              <div class="card-title">URL Checker</div>
+              <div class="card-sub">Paste any suspicious link to analyze</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="url-input-wrap">
+              <textarea
+                class="url-input"
+                id="urlInput"
+                placeholder="https://suspicious-link.xyz/verify/account..."
+                oninput="onUrlInput()"
+              ></textarea>
+            </div>
+
+            <div class="scanning-wrap" id="urlScanning">
+              <div class="scan-ring"></div>
+              <div class="scan-text">ANALYZING URL...</div>
+            </div>
+
+            <div class="result-wrap" id="urlResult"></div>
+
+            <button class="btn btn-primary" id="urlCheckBtn" onclick="submitUrlCheck()" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+              Check URL
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- HISTORY TAB -->
+    <div class="tab-panel" id="tab-history">
+      <div class="history-controls">
+        <div class="history-title">Scan History</div>
+        <button class="btn btn-secondary" style="width:auto;padding:8px 20px" onclick="loadHistory()">
+          ↻ Refresh
+        </button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Timestamp</th>
+              <th>Type</th>
+              <th>Scanned URL</th>
+              <th>Verdict</th>
+              <th>Vision</th>
+              <th>URL Layer</th>
+              <th>Explanation</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr>
+              <td colspan="8">
+                <div class="empty-state">
+                  <div class="empty-state-icon">◈</div>
+                  <p>Loading scan history...</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="footer-text">
+      <span>AegisQ</span> — AI-Driven QR Transaction Verification &amp; Fraud Detection System<br/>
+      BSc(Hons) Computer Security · University of Plymouth (NSBM) · Radeen Amarabandu
+    </div>
+  </div>
+</footer>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'http://127.0.0.1:8000';
+
+// ── SERVER STATUS CHECK ──
+async function checkServer() {
+  try {
+    const r = await fetch(`${API}/`);
+    const d = await r.json();
+    document.getElementById('serverStatus').textContent = 'SYSTEM ONLINE';
+    loadStats();
+    loadHistory();
+  } catch {
+    document.getElementById('serverStatus').textContent = 'SERVER OFFLINE';
+    document.getElementById('serverStatus').style.color = 'var(--red)';
+    showToast('Cannot connect to AegisQ backend. Make sure uvicorn is running.', 'error');
+  }
+}
+
+// ── STATS ──
+async function loadStats() {
+  try {
+    const r = await fetch(`${API}/stats`);
+    const d = await r.json();
+    const s = d.statistics;
+    document.getElementById('statTotal').textContent = s.total_scans;
+    document.getElementById('statThreats').textContent = s.threats_detected;
+    document.getElementById('statSecure').textContent = s.secure_scans;
+    document.getElementById('statPct').textContent = s.threat_percentage + '%';
+  } catch {}
+}
+
+// ── TABS ──
+function switchTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  event.target.classList.add('active');
+  if (tab === 'history') loadHistory();
+}
+
+// ── QR UPLOAD ──
+function handleQRUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const preview = document.getElementById('previewImg');
+  const icon = document.getElementById('uploadIcon');
+  const text = document.getElementById('uploadText');
+  preview.src = URL.createObjectURL(file);
+  preview.style.display = 'block';
+  icon.style.display = 'none';
+  text.textContent = file.name;
+  document.getElementById('qrScanBtn').disabled = false;
+  document.getElementById('qrResult').style.display = 'none';
+  document.getElementById('qrResult').innerHTML = '';
+}
+
+// Drag and drop
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    document.getElementById('qrFileInput').files = dt.files;
+    handleQRUpload({ target: { files: [file] } });
+  }
+});
+
+// ── SUBMIT QR SCAN ──
+async function submitQRScan() {
+  const file = document.getElementById('qrFileInput').files[0];
+  if (!file) return;
+
+  const btn = document.getElementById('qrScanBtn');
+  const scanning = document.getElementById('qrScanning');
+  const resultWrap = document.getElementById('qrResult');
+
+  btn.disabled = true;
+  scanning.style.display = 'block';
+  resultWrap.style.display = 'none';
+  resultWrap.innerHTML = '';
+
+  try {
+    const form = new FormData();
+    form.append('file', file);
+    const r = await fetch(`${API}/scan`, { method: 'POST', body: form });
+    const d = await r.json();
+    scanning.style.display = 'none';
+    renderResult(resultWrap, d, true);
+    loadStats();
+    showToast('Scan complete.', 'success');
+  } catch (err) {
+    scanning.style.display = 'none';
+    showToast('Scan failed. Is the server running?', 'error');
+  }
+  btn.disabled = false;
+}
+
+// ── URL INPUT ──
+function onUrlInput() {
+  const val = document.getElementById('urlInput').value.trim();
+  document.getElementById('urlCheckBtn').disabled = val.length === 0;
+}
+
+// ── SUBMIT URL CHECK ──
+async function submitUrlCheck() {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) return;
+
+  const btn = document.getElementById('urlCheckBtn');
+  const scanning = document.getElementById('urlScanning');
+  const resultWrap = document.getElementById('urlResult');
+
+  btn.disabled = true;
+  scanning.style.display = 'block';
+  resultWrap.style.display = 'none';
+  resultWrap.innerHTML = '';
+
+  try {
+    const r = await fetch(`${API}/scan-url`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    const d = await r.json();
+    scanning.style.display = 'none';
+    renderResult(resultWrap, d, false);
+    loadStats();
+    showToast('Analysis complete.', 'success');
+  } catch (err) {
+    scanning.style.display = 'none';
+    showToast('Request failed. Is the server running?', 'error');
+  }
+  btn.disabled = false;
+}
+
+// ── RENDER RESULT ──
+function renderResult(container, data, isQR) {
+  const isTheat = data.overall_status === 'THREAT DETECTED';
+  const cls = isTheat ? 'threat' : 'secure';
+  const icon = isTheat ? '⚠' : '✓';
+
+  let html = `
+    <div class="result-banner ${cls} fade-in">
+      <div class="result-icon">${icon}</div>
+      <div>
+        <div class="result-status">${data.overall_status}</div>
+        <div class="result-msg">${data.message}</div>
+      </div>
+    </div>`;
+
+  // URL display
+  if (data.scanned_url && data.scanned_url !== 'No URL Found') {
+    html += `
+      <div class="url-display fade-in">
+        <div class="url-display-label">Scanned URL</div>
+        ${escHtml(data.scanned_url)}
+      </div>`;
+  }
+
+  // Layers
+  if (isQR && data.vision_layer) {
+    const vCls = data.vision_layer.result.toLowerCase();
+    const uCls = (data.url_layer?.result || 'unknown').toLowerCase();
+    html += `
+      <div class="layers-grid fade-in">
+        <div class="layer-cell">
+          <div class="layer-label">Layer 1 — Physical</div>
+          <div class="layer-verdict ${vCls}">${data.vision_layer.result}</div>
+          <div class="layer-conf">${data.vision_layer.confidence}</div>
+        </div>
+        <div class="layer-cell">
+          <div class="layer-label">Layer 2 — Digital</div>
+          <div class="layer-verdict ${uCls}">${data.url_layer?.result || 'N/A'}</div>
+          <div class="layer-conf">${data.url_layer?.confidence || '—'}</div>
+        </div>
+      </div>`;
+  } else if (!isQR && data.url_layer) {
+    const uCls = (data.url_layer.result || 'unknown').toLowerCase();
+    html += `
+      <div class="layers-grid fade-in">
+        <div class="layer-cell" style="grid-column:1/-1">
+          <div class="layer-label">URL Analysis Result</div>
+          <div class="layer-verdict ${uCls}">${data.url_layer.result}</div>
+          <div class="layer-conf">${data.url_layer.confidence}</div>
+        </div>
+      </div>`;
+  }
+
+  // SHAP explanation
+  const exp = data.url_layer?.explanation;
+  if (exp && exp.risk_factors && exp.risk_factors.length > 0) {
+    html += `
+      <div class="shap-wrap fade-in">
+        <div class="shap-header">
+          <span style="color:var(--red)">⚑</span>
+          <span class="shap-title">AI Explanation — Why This Was Flagged</span>
+        </div>
+        <div class="shap-body">
+          <div class="shap-summary">${escHtml(exp.summary)}</div>`;
+
+    exp.risk_factors.forEach(f => {
+      html += `
+          <div class="risk-factor">
+            <span class="risk-badge ${f.impact_level}">${f.impact_level}</span>
+            <span class="risk-reason">${escHtml(f.reason)}</span>
+          </div>`;
+    });
+
+    html += `</div></div>`;
+  }
+
+  container.innerHTML = html;
+  container.style.display = 'block';
+}
+
+// ── LOAD HISTORY ──
+async function loadHistory() {
+  const tbody = document.getElementById('historyBody');
+  try {
+    const r = await fetch(`${API}/history?limit=100`);
+    const d = await r.json();
+
+    if (!d.scans || d.scans.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8">
+        <div class="empty-state">
+          <div class="empty-state-icon">◈</div>
+          <p>No scans yet. Run a scan to see history here.</p>
+        </div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = d.scans.map((s, i) => {
+      const isTheat = s.overall_status === 'THREAT DETECTED';
+      return `
+        <tr>
+          <td style="color:var(--text3);font-family:var(--mono);font-size:11px">${s.id}</td>
+          <td class="td-time">${s.timestamp}</td>
+          <td><span class="td-type">${s.scan_type}</span></td>
+          <td class="td-url" title="${escHtml(s.scanned_url)}">${escHtml(s.scanned_url)}</td>
+          <td><span class="verdict-badge ${isTheat ? 'threat' : 'secure'}">${s.overall_status}</span></td>
+          <td style="font-family:var(--mono);font-size:11px;color:var(--text2)">${s.vision_result}</td>
+          <td style="font-family:var(--mono);font-size:11px;color:var(--text2)">${s.url_result} ${s.url_confidence}</td>
+          <td style="font-size:11px;color:var(--text2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(s.explanation_summary||'')}">
+            ${s.explanation_summary ? escHtml(s.explanation_summary.substring(0, 60)) + '...' : '—'}
+          </td>
+        </tr>`;
+    }).join('');
+  } catch {
+    tbody.innerHTML = `<tr><td colspan="8">
+      <div class="empty-state">
+        <p>Could not load history. Make sure the server is running.</p>
+      </div></td></tr>`;
+  }
+}
+
+// ── TOAST ──
+let toastTimer;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ── HELPERS ──
+function escHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── INIT ──
+checkServer();
+</script>
+</body>
+</html>
+```
