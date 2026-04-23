@@ -9,8 +9,10 @@ from collections import Counter
 from scipy.stats import entropy as scipy_entropy
 import xgboost as xgb
 import shap
+from database import init_db, save_scan, get_history, get_stats
 
 app = FastAPI()
+init_db()
 
 # --- 1. LOAD THE BRAINS ---
 print("AegisQ: Loading Dual-Layer AI Models...")
@@ -209,7 +211,21 @@ async def scan_qr(file: UploadFile = File(...)):
     else:
         overall_status = "SECURE"
         message = "Both physical surface and digital link are verified authentic."
-        
+    # Save to scan history
+    explanation_summary = None
+    if url_explanation:
+        explanation_summary = url_explanation.get("summary", None)
+
+    save_scan(
+        scan_type="QR_IMAGE",
+        scanned_url=extracted_url,
+        overall_status=overall_status,
+        vision_result=vision_verdict,
+        vision_confidence=v_confidence,
+        url_result=url_verdict,
+        url_confidence=url_confidence,
+        explanation_summary=explanation_summary
+    )                       
     return {
         "status": "Success",
         "overall_status": overall_status,
@@ -264,6 +280,22 @@ async def scan_url_direct(request: dict):
         overall_status = "THREAT DETECTED" if url_verdict == "MALICIOUS" else "SECURE"
         message = "WARNING: This link appears to be malicious." if url_verdict == "MALICIOUS" else "This link appears to be safe."
 
+                # Save to scan history
+        explanation_summary = None
+        if url_explanation:
+            explanation_summary = url_explanation.get("summary", None)
+
+        save_scan(
+            scan_type="DIRECT_URL",
+            scanned_url=url,
+            overall_status=overall_status,
+            vision_result="N/A",
+            vision_confidence=0.0,
+            url_result=url_verdict,
+            url_confidence=url_confidence,
+            explanation_summary=explanation_summary
+        )
+
         return {
             "status": "Success",
             "overall_status": overall_status,
@@ -281,5 +313,37 @@ async def scan_url_direct(request: dict):
             "status": "Error",
             "message": f"Something went wrong: {str(e)}"
         }
+# --- 5. SCAN HISTORY ENDPOINT ---
+@app.get("/history")
+def scan_history(limit: int = 50):
+    """Returns the most recent scan history."""
+    records = get_history(limit)
+    return {
+        "status": "Success",
+        "total_returned": len(records),
+        "scans": [
+            {
+                "id": r.id,
+                "timestamp": r.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                "scan_type": r.scan_type,
+                "scanned_url": r.scanned_url,
+                "overall_status": r.overall_status,
+                "vision_result": r.vision_result,
+                "vision_confidence": f"{r.vision_confidence * 100:.2f}%",
+                "url_result": r.url_result,
+                "url_confidence": f"{r.url_confidence * 100:.2f}%",
+                "explanation_summary": r.explanation_summary
+            }
+            for r in records
+        ]
+    }
 
+# --- 6. STATS ENDPOINT ---
+@app.get("/stats")
+def scan_stats():
+    """Returns overall scanning statistics."""
+    return {
+        "status": "Success",
+        "statistics": get_stats()
+    }
 print("AegisQ: Dual-Layer System Ready.")
