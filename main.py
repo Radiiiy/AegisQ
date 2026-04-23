@@ -56,6 +56,25 @@ def extract_url_features(url):
     keywords = ['login', 'verify', 'secure', 'update', 'banking', 'lanka', 'gift', 'reward']
     features['keyword_count'] = sum(1 for word in keywords if word in url.lower())
 
+    # Sinhala/Tamil Localization Detection
+    sinhala_tamil_unicode = any(
+        '\u0D80' <= char <= '\u0DFF' or '\u0B80' <= char <= '\u0BFF'
+        for char in url
+    )
+
+    transliterated_keywords = [
+        'ginuma', 'tahauru', 'bank seva', 'ganum', 'within',
+        'ithiripas', 'palamu', 'anuthura', 'sampurna',
+        'kanakku', 'saripaaru', 'vangki', 'payam', 'pudhuppi',
+        'uruthipaduthu', 'seluththu', 'vagaiyara',
+        'prize winner', 'congratulations winner', 'claim reward',
+        'account suspended', 'urgent action', 'immediate verify'
+    ]
+
+    features['sinhala_tamil_keywords'] = (
+        1 if sinhala_tamil_unicode else 0
+    ) + sum(1 for word in transliterated_keywords if word in url.lower())
+
     return pd.DataFrame([features])
 
 def is_whitelisted(url):
@@ -66,7 +85,7 @@ def is_whitelisted(url):
 # --- 3. SHAP EXPLANATION ---
 _FEATURE_REASONS = {
     'url_length':    "The URL is unusually long, a common tactic to hide a malicious destination.",
-    'digit_ratio':   "The URL contains a high proportion of digits, typical of auto-generated phishing links.",
+    'digit_ratio':   "The URL's digit pattern matches known phishing link structures.",
     'entropy':       "The URL has high character randomness, suggesting an obfuscated or machine-generated address.",
     'count_dots':    "The URL contains an excessive number of dots, often used to fake legitimate subdomains.",
     'count_hyphens': "The URL contains many hyphens, commonly used to mimic trusted brand names.",
@@ -74,6 +93,7 @@ _FEATURE_REASONS = {
     'is_https':      "The URL does not use HTTPS, meaning the connection is unencrypted and unverified.",
     'suspicious_tld':"The URL uses a suspicious top-level domain commonly associated with phishing sites.",
     'keyword_count': "The URL contains phishing keywords such as 'login', 'verify', or 'secure'.",
+    'sinhala_tamil_keywords': "The URL contains Sinhala or Tamil language patterns commonly used in Sri Lankan phishing scams.",
 }
 
 def get_shap_explanation(url_features_df):
@@ -96,7 +116,7 @@ def get_shap_explanation(url_features_df):
 
     risk_factors = []
     for name, impact, value in ranked:
-        if impact <= 0:
+        if impact <= 0.01:
             continue
         if impact > 0.15:
             level = "HIGH"

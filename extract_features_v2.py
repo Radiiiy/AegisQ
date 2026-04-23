@@ -35,7 +35,26 @@ def extract_advanced_features(url):
     # 4. Keyword Intensity
     keywords = ['login', 'verify', 'secure', 'update', 'banking', 'lanka', 'gift', 'reward']
     features['keyword_count'] = sum(1 for word in keywords if word in url.lower())
-    
+
+    # 5. Sinhala/Tamil Localization Detection
+    sinhala_tamil_unicode = any(
+        '\u0D80' <= char <= '\u0DFF' or '\u0B80' <= char <= '\u0BFF'
+        for char in url
+    )
+
+    transliterated_keywords = [
+        'ginuma', 'tahauru', 'bank seva', 'ganum', 'within',
+        'ithiripas', 'palamu', 'anuthura', 'sampurna',
+        'kanakku', 'saripaaru', 'vangki', 'payam', 'pudhuppi',
+        'uruthipaduthu', 'seluththu', 'vagaiyara',
+        'prize winner', 'congratulations winner', 'claim reward',
+        'account suspended', 'urgent action', 'immediate verify'
+    ]
+
+    features['sinhala_tamil_keywords'] = (
+        1 if sinhala_tamil_unicode else 0
+    ) + sum(1 for word in transliterated_keywords if word in url.lower())
+
     return features
 
 # Process the data
