@@ -1,6 +1,5 @@
 import pandas as pd
 import xgboost as xgb
-import numpy as np
 import pickle
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
@@ -13,57 +12,11 @@ phish_features = pd.read_csv("url_features_numeric_v2.csv")
 phish_features['is_phishing'] = 1
 print(f"Real phishing samples: {len(phish_features)}")
 
-# 2. Generate REALISTIC safe URL features
-# These now reflect real world legitimate URLs properly
-print("Step 2: Generating realistic safe URL features...")
-np.random.seed(42)
-n_safe = len(phish_features)
-
-safe_features = pd.DataFrame({
-    # Real URLs vary widely in length including long ones with IDs
-    'url_length': np.random.randint(20, 120, n_safe),
-    
-    # Real URLs CAN have digits - IDs, dates, version numbers
-    # This is the key fix - safe URLs can have high digit ratios
-    'digit_ratio': np.random.uniform(0.0, 0.35, n_safe),
-    
-    # Real URLs have normal entropy - not extreme
-    'entropy': np.random.uniform(3.2, 4.8, n_safe),
-    
-    # Real URLs can have multiple dots - subdomains like students.nsbm.ac.lk
-    'count_dots': np.random.randint(1, 6, n_safe),
-    
-    # Real URLs rarely have many hyphens
-    'count_hyphens': np.random.randint(0, 2, n_safe),
-    
-    # Legitimate URLs never use @ symbol
-    'count_at': np.zeros(n_safe),
-    
-    # Legitimate sites use HTTPS
-    'is_https': np.ones(n_safe),
-    
-    # Legitimate sites don't use suspicious TLDs
-    'suspicious_tld': np.zeros(n_safe),
-    
-    # Legitimate sites rarely have phishing keywords
-    'keyword_count': np.random.randint(0, 2, n_safe),
-    
-    # Legitimate Sri Lankan sites don't use Sinhala/Tamil scam patterns
-    'sinhala_tamil_keywords': np.zeros(n_safe),
-
-    # Legitimate sites use common safe TLDs
-    'safe_tld': np.ones(n_safe),
-
-    # Legitimate sites belong to recognised domains
-    'is_trusted_domain': np.ones(n_safe),
-
-    # Legitimate sites don't trigger composite entropy risk
-    'entropy_risk': np.zeros(n_safe),
-
-    'is_phishing': 0
-})
-
-print(f"Realistic safe samples: {len(safe_features)}")
+# 2. Load safe URL features from CSV
+print("Step 2: Loading safe URL features from safe_url_features.csv...")
+safe_features = pd.read_csv("safe_url_features.csv")
+safe_features['is_phishing'] = 0
+print(f"Real safe samples: {len(safe_features)}")
 
 # 3. Combine
 data = pd.concat([phish_features, safe_features], ignore_index=True)

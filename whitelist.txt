@@ -31,3 +31,7 @@ googleapis.com
 # Google/YouTube Services
 youtube.com
 youtu.be
+
+# Shopping
+amazon.com
+amzn.to

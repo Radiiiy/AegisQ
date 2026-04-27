@@ -67,9 +67,16 @@ def extract_url_features(url):
         'microsoft', 'apple', 'amazon', 'netflix', 'spotify',
         'github', 'stackoverflow', 'wikipedia', 'reddit', 'linkedin',
         'whatsapp', 'telegram', 'tiktok', 'snapchat', 'pinterest',
+        'paypal', 'stripe', 'wise', 'revolut', 'coinbase',
+        'booking', 'airbnb', 'tripadvisor', 'expedia', 'uber',
+        'bbc', 'cnn', 'reuters', 'bloomberg', 'nytimes',
+        'udemy', 'coursera', 'edx', 'khanacademy', 'duolingo',
+        'notion', 'figma', 'canva', 'discord', 'slack',
+        'dialog', 'mobitel', 'slt', 'hutch', 'airtel',
         'boc', 'sampath', 'combank', 'hnb', 'nsbm', 'cmb', 'seylan',
         'dfcc', 'nations', 'peoples', 'lankapay', 'lankaqr', 'cbsl',
-        'gov', 'edu', 'ac', 'university', 'bank'
+        'ikman', 'daraz', 'pickme', 'takas', 'kapruka',
+        'gov', 'edu', 'ac', 'university', 'bank', 'nasa', 'who'
     ]
 
     keywords = ['login', 'verify', 'secure', 'update', 'banking',
@@ -212,7 +219,12 @@ async def scan_qr(file: UploadFile = File(...)):
     v_pred = vision_model.predict(img_batch)
     
     v_confidence = float(v_pred[0][0])
-    vision_verdict = "DANGEROUS" if v_confidence > 0.5 else "SAFE"
+    if 0.3 <= v_confidence <= 0.7:
+        vision_verdict = "UNCERTAIN"
+    elif v_confidence > 0.7:
+        vision_verdict = "DANGEROUS"
+    else:
+        vision_verdict = "SAFE"
     
     # ==========================================
     # LAYER 2: URL (Digital Phishing)
@@ -247,10 +259,16 @@ async def scan_qr(file: UploadFile = File(...)):
     # ==========================================
     # FINAL AEGISQ VERDICT
     # ==========================================
-    # If EITHER layer detects a threat, the entire QR code is blocked.
+    # UNCERTAIN vision is abstained — only explicit DANGEROUS or MALICIOUS triggers a threat.
     if vision_verdict == "DANGEROUS" or url_verdict == "MALICIOUS":
         overall_status = "THREAT DETECTED"
         message = "WARNING: Code is physically tampered or contains a malicious link."
+    elif vision_verdict == "UNCERTAIN" and url_verdict == "UNKNOWN":
+        overall_status = "UNVERIFIED"
+        message = "Could not reliably verify this QR code. Please try a clearer image or use the live camera scan."
+    elif vision_verdict == "UNCERTAIN" and url_verdict == "SAFE":
+        overall_status = "SECURE"
+        message = "Physical integrity could not be verified, but the digital link appears safe."
     else:
         overall_status = "SECURE"
         message = "Both physical surface and digital link are verified authentic."

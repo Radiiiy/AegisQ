@@ -9,12 +9,18 @@ dataset/
 # CSV data files
 *.csv
 
-# Python cache
-__pycache__/
-*.pyc
+# Database
+*.db
 
 # Screenshots
 Screenshots/
 
-# Environment files
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment
 .env
+
+# Generated images
+xai_url_explanation.png

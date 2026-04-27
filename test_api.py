@@ -4,7 +4,7 @@ import requests
 url = "http://127.0.0.1:8000/scan"
 
 # Pick an image from your folder to test
-image_path = "dataset/tampered/subtle_attack_qr.png"
+image_path = "dataset/clean/qr_v3_0.png"
 
 print(f"--- AEGISQ: TESTING DUAL-LAYER API ---")
 print(f"Sending image: {image_path} to server...")
