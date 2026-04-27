@@ -129,7 +129,23 @@ def extract_url_features(url):
 def is_whitelisted(url):
     ext = tldextract.extract(url)
     domain = f"{ext.domain}.{ext.suffix}".lower()
-    return domain in trusted_domains
+    full_domain = f"{ext.subdomain}.{ext.domain}.{ext.suffix}".lower() if ext.subdomain else domain
+    
+    # Check explicit whitelist - both with and without subdomain
+    if domain in trusted_domains or full_domain in trusted_domains:
+        return True
+    
+    # Trust entire .lk TLD with HTTPS
+    if ext.suffix == 'lk' and url.startswith('https'):
+        return True
+    
+    # Trust verified institutional TLDs globally
+    trusted_tlds = ['gov', 'edu', 'ac', 'mil']
+    if any(ext.suffix.endswith(tld) for tld in trusted_tlds):
+        if url.startswith('https'):
+            return True
+    
+    return False
 
 # --- 3. SHAP EXPLANATION ---
 _FEATURE_REASONS = {
