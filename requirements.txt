@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+tensorflow
+xgboost
+scikit-learn
+shap
+opencv-python-headless
+pandas
+numpy
+tldextract
+scipy
+sqlalchemy
+pillow
+python-multipart
+pickle5
