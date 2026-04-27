@@ -1,5 +1,8 @@
 # AegisQ – AI-Driven QR Transaction Verification & Fraud Detection System
 
+## Live Demo
+Access AegisQ live at: https://web-production-4d4625.up.railway.app/app
+
 ## Overview
 AegisQ is a dual-layer AI security system designed to protect users from QR code-based 
 phishing attacks (quishing) in Sri Lanka. It combines computer vision and machine learning 
