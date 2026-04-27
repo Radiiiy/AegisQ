@@ -64,7 +64,7 @@ header{border-bottom:1px solid var(--border);padding:18px 0;position:sticky;top:
 #qr-reader__dashboard_section_csr button{background:var(--accent)!important;color:#000!important;border:none!important;padding:10px 20px!important;border-radius:8px!important;font-family:var(--mono)!important;font-size:11px!important;letter-spacing:1.5px!important;text-transform:uppercase!important;cursor:pointer!important;font-weight:600!important;}
 #qr-reader__dashboard_section_csr select{background:var(--bg2)!important;color:var(--text)!important;border:1px solid var(--border2)!important;padding:8px!important;border-radius:6px!important;}
 #qr-reader__camera_selection{background:var(--bg2)!important;color:var(--text)!important;}
-.camera-placeholder{padding:60px 20px;text-align:center;color:var(--text3);}
+.camera-placeholder{padding:60px 20px;text-align:center;color:var(--text3);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;}
 .camera-placeholder p{margin-top:12px;font-family:var(--mono);font-size:11px;letter-spacing:1px;}
 .detected-url-card{display:none;margin-top:16px;background:var(--bg3);border:1px solid var(--accent);border-radius:12px;padding:16px;}
 .detected-label{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:8px;}
@@ -318,7 +318,7 @@ footer{border-top:1px solid var(--border);padding:22px 0;margin-top:60px;backgro
           </div>
           <div class="card-body">
             <div class="upload-zone" id="uploadZone">
-              <input type="file" id="qrFileInput" accept="image/*" onchange="handleQRUpload(event)"/>
+              <input type="file" id="qrFileInput" accept="image/png,image/jpeg,image/jpg" onchange="handleQRUpload(event)"/>
               <img class="preview-img" id="previewImg" alt="QR Preview"/>
               <div id="uploadIcon">
                 <svg width="40" height="40" viewBox="0 0 48 48" fill="none" stroke="#2e4558" stroke-width="1.5">
