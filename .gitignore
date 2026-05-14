@@ -19,3 +19,18 @@ __pycache__/
 
 # Generated images
 xai_url_explanation.png
+
+# Old and debug files
+aegis_url_model.pkl
+aegis_xai_audit.py
+debug_vision.py
+download_phish_data.py
+extract_features.py
+generate_dataset.py
+generate_report.py
+index.html
+make_benign.py
+train_url_model.py
+train_url_model_v2.py
+truth_serum.py
+url_diagnostic.py
